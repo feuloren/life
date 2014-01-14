@@ -12,13 +12,17 @@ class LifeComputer:
     def set_size(self, width=None, height=None):
         """Définie la hauteur et/ou la largeur de la grille.
         Appelle les gestionnaires de changement d'état une fois terminé."""
-        if not(width is None):
+        set = False
+
+        if not(width is None) and int(width) != self.width:
             self.width = int(width)
+            set = True
 
-        if not(height is None):
+        if not(height is None) and int(height) != self.height:
             self.height = int(height)
+            set = True
 
-        if not(height is None) or not(width is None):
+        if set:
             self.reconfigure()
 
     def configure(self):
@@ -124,6 +128,14 @@ class LifeComputer:
                 y += 1
 
         return (x,y)
+
+    def toggle(self, x, y):
+        if self[x,y] == 1:
+            self[x, y] = 0
+        else:
+            self[x, y] = 1
+
+        self.change()
 
     def change(self):
         """Signale le changement d'état à tous les gestionnaires connectés"""
