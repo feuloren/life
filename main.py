@@ -55,7 +55,6 @@ class GridCanvas(Gtk.DrawingArea):
                         Gdk.EventMask.BUTTON1_MOTION_MASK | #
                         Gdk.EventMask.POINTER_MOTION_HINT_MASK)
         self.connect("button-press-event", self.button_press_cb)
-        self.connect("button-release-event", self.button_release_cb)
         self.connect("motion_notify_event", self.motion_event_cb)
 
     def set_square_size(self, size):
@@ -83,14 +82,20 @@ class GridCanvas(Gtk.DrawingArea):
                     cr.set_source_rgb(0.9, 0.9, 0.9)
                 cr.fill()
 
+    def get_case_from_event(self, event):
+        return event.x // (self.border + self.size), event.y // (self.border + self.size)
+
     def button_press_cb(self, w, event):
-        self.emit('click', event.x // (self.border + self.size), event.y // (self.border + self.size))
+        case = self.get_case_from_event(event)
+        self.cases_parcourues = [case,]
+        
+        self.emit('click', *case)
 
-    def button_release_cb(self, w, e):
-        pass
-
-    def motion_event_cb(self, w, e):
-        pass
+    def motion_event_cb(self, w, event):
+        case = self.get_case_from_event(event)
+        if not(case in self.cases_parcourues):
+            self.cases_parcourues.append(case)
+            self.emit('click', *case)
 
     def size_change_cb(self, widget, allocation):
         self.compute_size_change(allocation)
