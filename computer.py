@@ -29,9 +29,29 @@ class LifeComputer:
         self.array = np.zeros((self.width+2, self.height+2), dtype=int)
 
     def reconfigure(self):
-        self.configure()
-        self.change()
         # TODO
+        # réfléchir sur papier avant de le refaire
+        old_width, old_height = self.array.shape
+        if old_width == self.width and old_height == self.height:
+            return
+
+        def compute_slices(old, new):
+            if old > new:
+                # We copy a part of the old array to the new array
+                return slice(1, -1), slice(1, new+1)
+            else:
+                # We copy the whole old array to a part of the new array
+                return slice(1, old-1), slice(1, -1)
+
+        insert_x, extract_x = compute_slices(old_width, self.width)
+        insert_y, extract_y = compute_slices(old_height, self.height)
+
+        # Now we construct the new array
+        array = np.zeros((self.width+2, self.height+2), dtype=int)
+        array[insert_x, insert_y] = self.array[extract_x, extract_y]
+        self.array = array
+
+        self.change()
 
     def compute_naive(self, iterations=1):
         """Calcul d'itérations débile.

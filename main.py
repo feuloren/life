@@ -37,7 +37,8 @@ class Adjust(Gtk.Adjustment):
         return int(super(Gtk.Adjustment, self).get_value())
 
 class GridCanvas(Gtk.DrawingArea):
-    __gsignals__ = {'click' : (GObject.SIGNAL_RUN_FIRST, None, (int,int,))}
+    __gsignals__ = {'click' : (GObject.SIGNAL_RUN_FIRST, None, (int,int,)),
+                    'size-changed' : (GObject.SIGNAL_RUN_FIRST, None, (int,int,))}
 
     def __init__(self, array):
         super(Gtk.DrawingArea, self).__init__()
@@ -48,6 +49,7 @@ class GridCanvas(Gtk.DrawingArea):
         self.array = array
 
         self.connect("draw", self.draw_cb)
+        self.connect("size-allocate", self.size_change_cb)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
                         Gdk.EventMask.BUTTON_RELEASE_MASK | #
                         Gdk.EventMask.BUTTON1_MOTION_MASK | #
@@ -56,16 +58,19 @@ class GridCanvas(Gtk.DrawingArea):
         self.connect("button-release-event", self.button_release_cb)
         self.connect("motion_notify_event", self.motion_event_cb)
 
+    def set_square_size(self, size):
+        self.size = size
+        self.compute_size_change()
+
     def draw_grid(self, array):
         self.array = array
         w = self.get_window()
-        w.invalidate_region(w.get_visible_region(), False)
+        if not(w is None):
+            w.invalidate_region(w.get_visible_region(), False)
 
     def draw_cb(self, w, cr):
         cr.set_source_rgb(1, 1, 1)
         cr.paint()
-
-        print(self.array.shape)
 
         for i, line in enumerate(self.array):
             for j, val in enumerate(line):
@@ -78,22 +83,29 @@ class GridCanvas(Gtk.DrawingArea):
                     cr.set_source_rgb(0.9, 0.9, 0.9)
                 cr.fill()
 
-        print("draw")
-
     def button_press_cb(self, w, event):
         self.emit('click', event.x // (self.border + self.size), event.y // (self.border + self.size))
-        print("button press")
 
     def button_release_cb(self, w, e):
-        print("button release")
+        pass
 
     def motion_event_cb(self, w, e):
-        print("button move")
+        pass
+
+    def size_change_cb(self, widget, allocation):
+        self.compute_size_change(allocation)
+
+    def compute_size_change(self, allocation=None):
+        if allocation is None:
+            allocation = self.get_allocation()
+
+        # calculate how many columns and lines can fit in
+        cols = allocation.width // (self.border + self.size)
+        lines = allocation.height // (self.border + self.size)
+
+        self.emit('size-changed', cols, lines)
 
 class MainWindow(Gtk.Window):
-    START_HEIGHT = 5
-    START_WIDTH = 5
-
     def __init__(self):
         Gtk.Window.__init__(self, title="The Game of Life")
 
@@ -113,35 +125,28 @@ class MainWindow(Gtk.Window):
         self.hbox.pack_start(button, False, False, 6)
 
         # Slides
-        self.size_adj = Adjust(5, 1, 100, "Size : %s")
+        self.size_adj = Adjust(10, 5, 100, "Size : %s")
         self.size_adj.connect('value-changed', self.set_size)
         self.hbox.pack_start(self.size_adj.create_widget(), False, False, 6)
-
-        #self.width_adj = Adjust(self.START_WIDTH, 5, 200, "Width : %s")
-        #self.width_adj.connect('value-changed', lambda c : self.computer.set_size(width=int(c.get_value())))
-        #self.hbox.pack_start(self.width_adj.create_widget(), False, False, 6)
-        #
-        #self.height_adj = Adjust(self.START_HEIGHT, 5, 200, "Height : %s")
-        #self.height_adj.connect('value-changed', lambda c : self.computer.set_size(height=int(c.get_value())))
-        #self.hbox.pack_start(self.height_adj.create_widget(), False, False, 6)
 
         self.iters_adj = Adjust(1, 1, 100, "Iterations : %s")
         self.hbox.pack_start(self.iters_adj.create_widget(), False, False, 6)
 
         # LifeComputer
-        self.computer = computer.LifeComputer(self.START_WIDTH, self.START_HEIGHT)
+        self.computer = computer.LifeComputer(0, 0)
         self.computer.connect_changed_handler(self.grid_changed)
 
         # Aire de dessin
         self.canvas = GridCanvas(self.computer[...])
         self.canvas.connect('click', lambda w, x, y: self.computer.toggle(x,y))
+        self.canvas.connect('size-changed', lambda w, c, l: self.computer.set_size(c,l))
         self.vbox.pack_start(self.canvas, True, True, 0)
 
         self.set_size_request(800, 500)
 
     def set_size(self, a):
         s = self.size_adj.get_value()
-        self.computer.set_size(s, s)
+        self.canvas.set_square_size(s)
 
     def on_start_button_clicked(self, widget):
         self.computer.compute()
