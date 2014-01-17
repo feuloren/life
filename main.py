@@ -137,6 +137,9 @@ class MainWindow(Gtk.Window):
         self.iters_adj = Adjust(1, 1, 100, "Iterations : %s")
         self.hbox.pack_start(self.iters_adj.create_widget(), False, False, 6)
 
+        self.speed_adj = Adjust(5, 1, 200, "Speed : %sx")
+        self.hbox.pack_start(self.speed_adj.create_widget(), False, False, 6)
+
         # LifeComputer
         self.computer = computer.LifeComputer(0, 0)
         self.computer.connect_changed_handler(self.grid_changed)
@@ -159,7 +162,8 @@ class MainWindow(Gtk.Window):
         iters = self.iters_adj.get_value()
         if iters > 1:
             self.iterations_left = iters - 1
-            GLib.timeout_add(200, self.compute)
+            delay = int(1 / self.speed_adj.get_value() * 1000)
+            GLib.timeout_add(delay, self.compute)
 
     def compute(self):
         if self.iterations_left == 0:
