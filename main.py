@@ -36,6 +36,10 @@ class Adjust(Gtk.Adjustment):
     def get_value(self):
         return int(super(Gtk.Adjustment, self).get_value())
 
+    @property
+    def value(self):
+        return self.get_value()
+
 class GridCanvas(Gtk.DrawingArea):
     __gsignals__ = {'click' : (GObject.SIGNAL_RUN_FIRST, None, (int,int,)),
                     'size-changed' : (GObject.SIGNAL_RUN_FIRST, None, (int,int,))}
@@ -153,16 +157,16 @@ class MainWindow(Gtk.Window):
         self.set_size_request(800, 500)
 
     def set_size(self, a):
-        s = self.size_adj.get_value()
+        s = self.size_adj.value
         self.canvas.set_square_size(s)
 
     def on_start_button_clicked(self, widget):
         self.computer.compute()
 
-        iters = self.iters_adj.get_value()
+        iters = self.iters_adj.value
         if iters > 1:
             self.iterations_left = iters - 1
-            delay = int(1 / self.speed_adj.get_value() * 1000)
+            delay = int(1 / self.speed_adj.value * 1000)
             GLib.timeout_add(delay, self.compute)
 
     def compute(self):
