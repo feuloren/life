@@ -149,11 +149,12 @@ class LifeComputer:
 
         return (x,y)
 
-    def toggle(self, x, y):
-        if self[x,y] == 1:
-            self[x, y] = 0
-        else:
-            self[x, y] = 1
+    def toggle(self, *cases):
+        for x, y in cases:
+            if self[x,y] == 1:
+                self[x, y] = 0
+            else:
+                self[x, y] = 1
 
         self.change()
 

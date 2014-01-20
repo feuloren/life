@@ -146,8 +146,8 @@ class MainWindow(Gtk.Window):
 
         # Aire de dessin
         self.canvas = GridCanvas(self.computer[...])
-        self.canvas.connect('click', lambda w, x, y: self.computer.toggle(x,y))
-        self.canvas.connect('size-changed', lambda w, c, l: self.computer.set_size(c,l))
+        self.canvas.connect('click', lambda w, x, y : self.computer.toggle((x,y)))
+        self.canvas.connect('size-changed', lambda w, c, l: self.computer.set_size(c, l))
         self.vbox.pack_start(self.canvas, True, True, 0)
 
         self.set_size_request(800, 500)
